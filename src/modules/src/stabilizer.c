@@ -47,6 +47,7 @@
 #include "controller.h"
 #include "power_distribution.h"
 #include "collision_avoidance.h"
+#include "pan_setpoint.h"
 #include "health.h"
 #include "supervisor.h"
 
@@ -183,6 +184,7 @@ void stabilizerInit(StateEstimatorType estimator)
   powerDistributionInit();
   motorsInit(platformConfigGetMotorMapping());
   collisionAvoidanceInit();
+  panSetpointInit();
   estimatorType = stateEstimatorGetType();
   controllerType = controllerGetType();
 
@@ -201,6 +203,7 @@ bool stabilizerTest(void)
   pass &= powerDistributionTest();
   pass &= motorsTest();
   pass &= collisionAvoidanceTest();
+  pass &= panSetpointTest();
 
   return pass;
 }
@@ -338,6 +341,9 @@ static void stabilizerTask(void* param)
       // Critical for safety, be careful if you modify this code!
       // Let the supervisor update it's view of the current situation
       supervisorUpdate(&sensorData, &setpoint, stabilizerStep);
+
+      // Let the collision avoidance module modify the setpoint, if needed
+      panSetpointUpdate(&setpoint, &sensorData, &state, stabilizerStep);
 
       // Let the collision avoidance module modify the setpoint, if needed
       collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, stabilizerStep);
