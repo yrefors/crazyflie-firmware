@@ -28,6 +28,7 @@ SOFTWARE.
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #ifdef CMATH3D_ASSERTS
 #include <assert.h>
@@ -93,7 +94,8 @@ static inline bool fcloseulps(float a, float b, int ulps) {
 	}
 	int ia = *((int *)&a);
 	int ib = *((int *)&b);
-	return fabsf(ia - ib) <= ulps;
+	long diff = (long)ia - (long)ib;
+	return labs(diff) <= ulps;
 }
 
 
