@@ -27,6 +27,9 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
 typedef enum {
     rangeFront=0,
     rangeBack,
@@ -52,6 +55,23 @@ void rangeSet(rangeDirection_t direction, float range_m);
  * @return Distance to an object in meter
  */
 float rangeGet(rangeDirection_t direction);
+
+/**
+ * Get the sys tick when a direction was last updated with rangeSet().
+ *
+ * @param direction Direction of the range
+ * @return Tick count at last update, 0 if never updated
+ */
+uint32_t rangeGetLastUpdateTick(rangeDirection_t direction);
+
+/**
+ * Check if a direction has been updated within the supplied age limit.
+ *
+ * @param direction Direction of the range
+ * @param maxAgeTicks Maximum accepted age in sys ticks
+ * @return true if updated recently enough, otherwise false
+ */
+bool rangeIsFresh(rangeDirection_t direction, uint32_t maxAgeTicks);
 
 /**
  * Enqueue a range measurement for distance to the ground in the current estimator.

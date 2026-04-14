@@ -32,13 +32,29 @@
 #include "stabilizer_types.h"
 #include "estimator.h"
 
+#ifdef CRAZYFLIE_FW
+#include "FreeRTOS.h"
+#include "task.h"
+#endif
+
 static uint16_t ranges[RANGE_T_END] = {0,};
+static uint32_t rangeLastUpdateTicks[RANGE_T_END] = {0,};
+
+static uint32_t rangeNowTick(void)
+{
+#ifdef CRAZYFLIE_FW
+  return xTaskGetTickCount();
+#else
+  return 0;
+#endif
+}
 
 void rangeSet(rangeDirection_t direction, float range_m)
 {
   if (direction > (RANGE_T_END-1)) return;
 
   ranges[direction] = range_m * 1000;
+  rangeLastUpdateTicks[direction] = rangeNowTick();
 }
 
 float rangeGet(rangeDirection_t direction)
@@ -46,6 +62,30 @@ float rangeGet(rangeDirection_t direction)
     if (direction > (RANGE_T_END-1)) return 0;
 
   return ranges[direction];
+}
+
+uint32_t rangeGetLastUpdateTick(rangeDirection_t direction)
+{
+  if (direction > (RANGE_T_END - 1)) {
+    return 0;
+  }
+
+  return rangeLastUpdateTicks[direction];
+}
+
+bool rangeIsFresh(rangeDirection_t direction, uint32_t maxAgeTicks)
+{
+  if (direction > (RANGE_T_END - 1)) {
+    return false;
+  }
+
+  const uint32_t lastTick = rangeLastUpdateTicks[direction];
+  if (lastTick == 0) {
+    return false;
+  }
+
+  const uint32_t nowTick = rangeNowTick();
+  return (nowTick - lastTick) <= maxAgeTicks;
 }
 
 void rangeEnqueueDownRangeInEstimator(float distance, float stdDev, uint32_t timeStamp) {
