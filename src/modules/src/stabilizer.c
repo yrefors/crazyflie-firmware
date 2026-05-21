@@ -342,11 +342,15 @@ static void stabilizerTask(void* param)
       // Let the supervisor update it's view of the current situation
       supervisorUpdate(&sensorData, &setpoint, stabilizerStep);
 
-      // Let the collision avoidance module modify the setpoint, if needed
       panSetpointUpdate(&setpoint, &sensorData, &state, stabilizerStep);
 
-      // Let the collision avoidance module modify the setpoint, if needed
-      collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, stabilizerStep);
+      // Skip stock collision avoidance when PAN is active: PAN's barrier
+      // functions already guarantee collision avoidance, and the Voronoi-based
+      // stock CA operates in position-goal space — running it after PAN has
+      // written roll/pitch/thrust would corrupt PAN's output.
+      if (!panSetpointIsActive()) {
+        collisionAvoidanceUpdateSetpoint(&setpoint, &sensorData, &state, stabilizerStep);
+      }
 
       // Critical for safety, be careful if you modify this code!
       // Let the supervisor modify the setpoint to handle exceptional conditions
